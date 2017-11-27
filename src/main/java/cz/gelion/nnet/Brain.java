@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cz.gelion.nnet.Neuron.ActivationFunction;
 import cz.gelion.nnet.Neuron.NeuronConnection;
 
 public class Brain {
@@ -18,14 +19,16 @@ public class Brain {
 	
 	Collection<Sensor> input;
 
-	Collection<Neuron> output;	
+	Collection<Neuron> output;
+	
+	Collection<Neuron> neurons;
 	
 	ActivationFunction activationFuction = new ActivationFunction() {
 		
 		@Override
 		public Double apply(Double c) {
-			log.trace(String.format("AtivationFunction.apply(%s)", c));
-			return 1/Math.pow(Math.E, -c);
+			//log.trace(String.format("AtivationFunction.apply(%s)", c));
+			return 1/(1+Math.exp(-c));
 		}
 		
 		public Double deriv(Double c) {
@@ -78,6 +81,8 @@ public class Brain {
 			}
 		}
 		output = neurons;
+		this.neurons = new ArrayList<>();
+		this.neurons.addAll(neurons);
 	}
 	
 	private void add(Collection<Neuron> neurons) {
@@ -90,15 +95,17 @@ public class Brain {
 			
 		}
 		output = neurons;
+		this.neurons.addAll(neurons);
 	}
 	
 	
-	Double error(Double target, Neuron out) {
-		return Math.sqrt(target - out.calc()) / 2;
+	
+	public Double error(Double target, Neuron out) {
+		return Math.pow(target - out.calc(), 2) / 2;
 	}
 	
 	
-	Double error(Double...d) {
+	public Double error(Double...d) {
 		Iterator<Neuron> i = output.iterator();
 		Double o = 0d;
 		for(Double dd: d) o = o+error(dd, i.next());
@@ -106,9 +113,44 @@ public class Brain {
 	}
 	
 	
-	Double correction(Double target, Neuron n, Double input) {
-		return ((target - n.calc()) * -1) * (n.calc() * (1 - n.calc())) * (input) ;
+	
+	protected void  uncalc() {
+		neurons.forEach(n -> {
+			n.calculated = false;
+		});
 	}
+	
+	
+	protected void diff(Neuron n, Double target) {
+		for (NeuronConnection c: n.input) c.diff(target);
+	}
+	
+	
+	protected void diff() {
+		input.forEach(s -> {
+			s.output.forEach(c -> {
+				c.diff();
+			});
+		});
+	}
+
+	
+	public void learn(Collection<Double> input, Collection<Double> output) {
+		log.trace("learn(" + input + "," + output + ") ### " + this.output  );
+		Iterator<Double> i = input.iterator();
+		this.input.forEach(s -> s.setValue(i.next()));
+		Iterator<Double> j = output.iterator();
+		this.output.forEach(o -> {
+			diff(o, j.next());
+		});
+		diff();
+		uncalc();
+	}
+	
+	public void output(Consumer<Neuron> c) {
+		output.forEach(o -> c.accept(o));
+	}
+	
 	
 	
 }

@@ -22,6 +22,10 @@ public class Sensor implements Cell {
 	}
 	
 	
+	public void setValue(Double d) {
+		input =d;
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("Sensor{%s}",  id);

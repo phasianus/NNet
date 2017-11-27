@@ -5,6 +5,4 @@ public interface Cell {
 	Double calc();
 	
 	
-	
-	
 }

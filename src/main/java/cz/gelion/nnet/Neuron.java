@@ -2,9 +2,12 @@ package cz.gelion.nnet;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.core.joran.spi.NoAutoStartUtil;
 
 public class Neuron implements Cell {
 	
@@ -23,7 +26,8 @@ public class Neuron implements Cell {
 	
 	Double bias = Math.random();
 	
-	Double target;
+	boolean calculated;
+	Double calc;
 	
 	public Neuron(String id, ActivationFunction f) {
 		this(f);
@@ -37,7 +41,12 @@ public class Neuron implements Cell {
 	
 	public Double calc() {
 		log.trace(this + ".calc()");
-		return activationFunction.apply(sum());
+		if (calculated) return calc;
+		
+		calc  = activationFunction.apply(sum());
+		calculated = true;
+		log.trace("\t...calculated :" + calc);
+		return calc;
 	}
 	
 	public Double sum() {
@@ -57,9 +66,6 @@ public class Neuron implements Cell {
 	}
 	
 	
-	Double error() {
-		return error(target);
-	}
 	
 	
 	Double error(Double target) {
@@ -72,16 +78,26 @@ public class Neuron implements Cell {
 		return String.format("Neuron{%s}", id);
 	}
 	
+	
+	
+	
 	class NeuronConnection {
 		
+		Double diff;
+		Double calc;
 		
-		public NeuronConnection(Cell input, Cell output) {
+		Boolean computed = false;
+		
+		public NeuronConnection(Cell input, Neuron output) {
 			this.input = input;
 			this.output = output;
 		}
 		
 		Double weight = Math.random();
-		Cell input, output;
+		Cell input;
+		Neuron output;
+		
+		
 		public Double sum() {
 			log.trace(this + ".sum()");
 			return input.calc() * weight;
@@ -92,18 +108,25 @@ public class Neuron implements Cell {
 			return String.format("NeruonConnection{[%s]->[%s]", input,output);
 		}
 		
+		Double diff() {
+			if (diff  == null)  {
+				Double r = 0d;
+				for (NeuronConnection c: output.output) r = r + c.diff();
+				diff = r * activationFunction.deriv(output.calc()) * input.calc();
+				log.trace(this + " calcualted diff: " + diff);
+				weight = weight -LEARN_CONST * diff;
+			}
+			return diff;
+		}
+		
+		Double diff(Double target) {
+			log.trace(this + "calculating diff from " + target);
+			diff = -(target * output.calc()) * activationFunction.deriv(output.calc()) * input.calc();
+			weight = weight -LEARN_CONST * diff;
+			return diff;
+		}
 	
 		
+	
 	}
-	
-	interface ActivationFunction {
-		Double apply(Double c);
-		
-		Double deriv(Double c);
-	}
-	
-	
-	
-	
-	
 }
