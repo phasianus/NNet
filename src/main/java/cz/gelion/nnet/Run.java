@@ -19,9 +19,34 @@ public class Run {
 
 		brain.output.forEach(n -> {
 			log.trace("output: " + n);
-			n.calc();
+			log.trace("\t\t calculated output: " + n.calc());
 		});
+
 		
+		
+		log.trace("Teaching...");
+		Double[] data  = new Double[] { 
+				0d,0d,0d,
+				0d,1d,0d,
+				1d,0d,0d,
+				1d,1d,1d
+		};
+		
+		
+		
+		
+		for (int i=0; i<data.length;) {
+			
+			
+			
+			
+		}
+		
+		
+		
+		brain.diff();
+		
+		log.trace("Finished");
 	}
 
 }
