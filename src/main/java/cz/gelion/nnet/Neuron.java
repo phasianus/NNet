@@ -86,6 +86,7 @@ public class Neuron implements Cell {
 		}
 		
 		Double weight = Math.random();
+		
 		Cell input;
 		Neuron output;	
 		

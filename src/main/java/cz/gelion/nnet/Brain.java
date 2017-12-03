@@ -138,9 +138,7 @@ public class Brain {
 		Iterator<Double> i = input.iterator();
 		this.input.forEach(s -> s.setValue(i.next()));
 		Iterator<Double> j = output.iterator();
-		this.output.forEach(o -> {
-			diff(o, j.next());
-		});
+		this.output.forEach(o -> diff(o, j.next()));
 		diff();
 		uncalc();
 	}
