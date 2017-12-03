@@ -17,6 +17,11 @@ public class Sensor implements Cell {
 	
 	Double input = 0d;
 	
+	@Override
+	public String getId() {
+		return id;
+	}
+	
 	public Double calc() {
 		return input;
 	}

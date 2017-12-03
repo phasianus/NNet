@@ -32,7 +32,8 @@ public class Brain {
 		}
 		
 		public Double deriv(Double c) {
-			return apply(c) * (1 - apply(c));
+			Double d;
+			return (d = apply(c)) * (1 - d);
 		};
 	};
 	
@@ -100,15 +101,11 @@ public class Brain {
 	
 	
 	
-	public Double error(Double target, Neuron out) {
-		return Math.pow(target - out.calc(), 2) / 2;
-	}
-	
 	
 	public Double error(Double...d) {
 		Iterator<Neuron> i = output.iterator();
 		Double o = 0d;
-		for(Double dd: d) o = o+error(dd, i.next());
+		for(Double dd: d) o = o+ i.next().error(dd);
 		return o;
 	}
 	
@@ -117,6 +114,7 @@ public class Brain {
 	protected void  uncalc() {
 		neurons.forEach(n -> {
 			n.calculated = false;
+			n.input.forEach(c -> c.diff = null);
 		});
 	}
 	

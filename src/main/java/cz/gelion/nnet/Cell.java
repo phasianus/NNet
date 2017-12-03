@@ -4,5 +4,5 @@ public interface Cell {
 
 	Double calc();
 	
-	
+	String getId();
 }

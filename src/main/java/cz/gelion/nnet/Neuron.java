@@ -3,6 +3,7 @@ package cz.gelion.nnet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,13 +40,18 @@ public class Neuron implements Cell {
 		this.activationFunction = f;
 	}
 	
+	@Override
+	public String getId() {
+		return id;
+	}
+	
 	public Double calc() {
 		log.trace(this + ".calc()");
 		if (calculated) return calc;
 		
 		calc  = activationFunction.apply(sum());
 		calculated = true;
-		log.trace("\t...calculated :" + calc);
+		log.trace(this + " calculated :" + calc);
 		return calc;
 	}
 	
@@ -58,28 +64,14 @@ public class Neuron implements Cell {
 		return o + bias;
 	}
 	
-	
-	
-	
-	Double endCorr(Double target, NeuronConnection conn) {
-		return conn.weight - (LEARN_CONST * (activationFunction.deriv(calc()) * conn.input.calc()));
+	public Double error(Double target) {
+		return (Math.pow(target - calc(), 2) / 2); 
 	}
-	
-	
-	
-	
-	Double error(Double target) {
-		return (Math.sqrt(target - calc()) / 2); 
-	}
-	
 	
 	@Override
 	public String toString() {
-		return String.format("Neuron{%s}", id);
+		return String.format("Neuron{%s, bias=%s,calc=%s}", id,bias,calc);
 	}
-	
-	
-	
 	
 	class NeuronConnection {
 		
@@ -95,8 +87,7 @@ public class Neuron implements Cell {
 		
 		Double weight = Math.random();
 		Cell input;
-		Neuron output;
-		
+		Neuron output;	
 		
 		public Double sum() {
 			log.trace(this + ".sum()");
@@ -105,28 +96,35 @@ public class Neuron implements Cell {
 		
 		@Override
 		public String toString() {
-			return String.format("NeruonConnection{[%s]->[%s]", input,output);
+			return String.format("NeruonConnection{[%s]->[%s], w=%s}", input.getId(), output.getId(), weight);
 		}
 		
 		Double diff() {
 			if (diff  == null)  {
-				Double r = 0d;
-				for (NeuronConnection c: output.output) r = r + c.diff();
-				diff = r * activationFunction.deriv(output.calc()) * input.calc();
-				log.trace(this + " calcualted diff: " + diff);
-				weight = weight -LEARN_CONST * diff;
+				log.trace("Calculating diff...");
+				return diff(()-> {
+					Double r = 0d;
+					for (NeuronConnection c: output.output) r = r + c.diff();
+					return r;
+				});
 			}
 			return diff;
 		}
 		
-		Double diff(Double target) {
-			log.trace(this + "calculating diff from " + target);
-			diff = -(target * output.calc()) * activationFunction.deriv(output.calc()) * input.calc();
-			weight = weight -LEARN_CONST * diff;
+		Double diff(Supplier<Double> sup) {
+			
+			diff = sup.get() * activationFunction.deriv(output.calc()) * input.calc();
+			weight = weight -(LEARN_CONST * diff);
+			log.trace(this + " calculated diff: " + diff);
 			return diff;
 		}
-	
 		
-	
+		Double diff(Double target) {
+			log.trace(this + " calculating diff from " + target + "...");
+			return diff(() -> {
+				return -(target - output.calc());
+			});
+			
+		}
 	}
 }
